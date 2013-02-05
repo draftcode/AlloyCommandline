@@ -1,0 +1,2 @@
+Main-Class: AlloyCommandline
+Class-Path: alloy4.2.jar
