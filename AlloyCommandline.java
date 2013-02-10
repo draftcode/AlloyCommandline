@@ -19,6 +19,8 @@ public final class AlloyCommandline {
     A4Options options = new A4Options();
     options.solver = A4Options.SatSolver.SAT4J;
 
+    StringBuilder success_out = new StringBuilder();
+    StringBuilder error_out = new StringBuilder();
     for (String filename : args) {
       Module world;
       try {
@@ -29,15 +31,31 @@ public final class AlloyCommandline {
       }
 
       for (Command command: world.getAllCommands()) {
+        A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
         if (command.check) {
-          A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
           if (ans.satisfiable()) {
-            System.out.println("Counter-example found: " + command);
+            error_out.append("Assertion error in " + command.pos.filename +
+                " at line " + command.pos.y + " column " + command.pos.x + ":\n");
+            error_out.append("Counter-example of " + command + " found.\n");
           } else {
-            System.out.println("Maybe valid: " + command);
+            success_out.append("Maybe valid: " + command + "\n");
+          }
+        } else {
+          if (ans.satisfiable()) {
+            success_out.append("Consistent: " + command + "\n");
+          } else {
+            error_out.append("Inconsistent error in " + command.pos.filename +
+                " at line " + command.pos.y + " column " + command.pos.x + ":\n");
+            error_out.append("No instance of " + command + " found.\n");
           }
         }
       }
+    }
+
+    if (error_out.length() != 0) {
+      System.err.print(error_out.toString());
+    } else {
+      System.out.print(success_out.toString());
     }
   }
 }
